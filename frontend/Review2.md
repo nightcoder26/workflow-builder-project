@@ -1,0 +1,9 @@
+- [ ] Helmet.js -  to prevent XSS 
+- [ ] JWT and tokens - for auth 
+- [ ] API gateway - to filter 
+- [ ] Ratelimiter - 
+- [ ] Spring security -  backend
+- [ ] Hash data using BCrypt 
+- [ ] CORS - To prevent unauthorized requests
+- [ ] Disable remote Database access - only from our devices
+- [ ] Only use HTTPS - For TLS
