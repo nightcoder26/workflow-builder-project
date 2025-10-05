@@ -6,7 +6,7 @@ import { ProfileMenu } from '@/components/topbar/ProfileMenu'
 import { WorkflowHistoryDropdown } from '@/components/topbar/WorkflowHistoryDropdown'
 
 export const TopNav: React.FC = () => {
-  const { workflowName, setWorkflowName, saveWorkflow, runTest, canSave } = useWorkflowStore()
+  const { workflowName, setWorkflowName, saveWorkflow, runTest, canSave, loadExampleWorkflow } = useWorkflowStore()
 
   return (
     <header className="h-16 px-4 border-b border-slate-200 bg-white shadow-card flex items-center justify-between">
@@ -25,6 +25,12 @@ export const TopNav: React.FC = () => {
       <div className="flex items-center gap-2">
         <Button variant="secondary" onClick={runTest}>
           <Play className="w-4 h-4 mr-2" /> Test Workflow
+        </Button>
+        <Button variant="ghost" onClick={() => {
+          const id = window.prompt('Paste a Google Spreadsheet ID (leave blank to enter later)')
+          loadExampleWorkflow(id && id.trim() ? id.trim() : undefined)
+        }}>
+          Example Workflow
         </Button>
         <Button disabled={!canSave()} onClick={saveWorkflow}>
           <Save className="w-4 h-4 mr-2" /> Save Workflow

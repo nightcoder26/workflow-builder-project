@@ -47,6 +47,7 @@ type Store = {
   setWorkflowName: (name: string) => void
   saveWorkflow: () => void
   runTest: () => Promise<void>
+  loadExampleWorkflow: (spreadsheetId?: string) => void
   canSave: () => boolean
   undo: () => void
   redo: () => void
@@ -107,33 +108,35 @@ const sampleNodes: Node<AppNodeData>[] = [
   {
     id: 'n1',
     type: 'appNode',
-    position: { x: 80, y: 120 },
-    data: { id: 'n1', service: 'gmail', kind: 'trigger', name: 'New Email Received', configured: true, config: { subject: 'Invoice' } }
+    position: { x: 120, y: 140 },
+    data: {
+      id: 'n1',
+      service: 'gmail',
+      kind: 'trigger',
+      name: 'New Email Received',
+      configured: true,
+      // trigger: look for subject containing 'test'
+      config: { subject: 'test', sinceMs: 0 }
+    }
   },
   {
     id: 'n2',
     type: 'appNode',
-    position: { x: 400, y: 100 },
-    data: { id: 'n2', service: 'sheets', kind: 'action', name: 'Add Row', configured: true, config: { spreadsheet: 'Invoices', worksheet: 'Sheet1' } }
-  },
-  {
-    id: 'n3',
-    type: 'appNode',
-    position: { x: 720, y: 100 },
-    data: { id: 'n3', service: 'slack', kind: 'action', name: 'Send Message to Channel', configured: true, config: { channel: '#finance', text: 'New invoice received from {{Gmail.SenderEmail}}' } }
-  },
-  {
-    id: 'n4',
-    type: 'appNode',
-    position: { x: 1040, y: 100 },
-    data: { id: 'n4', service: 'gcal', kind: 'action', name: 'Create Event', configured: true, config: { title: 'Process invoice from {{Gmail.SenderName}}' } }
+    position: { x: 520, y: 140 },
+    data: {
+      id: 'n2',
+      service: 'sheets',
+      kind: 'action',
+      name: 'Add Row',
+      configured: true,
+      // action: write to spreadsheet named 'test' (for demo you can use spreadsheetId instead)
+      config: { spreadsheet: 'test', worksheet: 'Sheet1', rowNumber: 2 }
+    }
   }
 ]
 
 const sampleEdges: Edge[] = [
   { id: 'e1-2', source: 'n1', target: 'n2', style: { stroke: SERVICE_META.gmail.color }, markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: 'e2-3', source: 'n2', target: 'n3', style: { stroke: SERVICE_META.sheets.color }, markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: 'e3-4', source: 'n3', target: 'n4', style: { stroke: SERVICE_META.slack.color }, markerEnd: { type: MarkerType.ArrowClosed } },
 ]
 
 export const useWorkflowStore = create<Store>((set, get) => ({
@@ -235,18 +238,114 @@ export const useWorkflowStore = create<Store>((set, get) => ({
     const payload = { savedAt: Date.now(), nodes, edges, workflowName }
     const key = 'workflow:last'
     localStorage.setItem(key, JSON.stringify(payload))
-    // also push to history versions
     pushHistory(set)
   },
 
+  loadExampleWorkflow: (spreadsheetId?: string) => {
+    const n1: Node<AppNodeData> = {
+      id: 'ex-gmail',
+      type: 'appNode',
+      position: { x: 120, y: 140 },
+      data: { id: 'ex-gmail', service: 'gmail', kind: 'trigger', name: 'New Email Received', configured: true, config: { subject: 'test', sinceMs: 0 } }
+    }
+    const n2: Node<AppNodeData> = {
+      id: 'ex-sheets',
+      type: 'appNode',
+      position: { x: 520, y: 140 },
+      data: { id: 'ex-sheets', service: 'sheets', kind: 'action', name: 'Add Row', configured: !!spreadsheetId, config: { spreadsheetId: spreadsheetId || '', sheetName: 'Sheet1', rowNumber: 2, values: ['{{Gmail.subject}}','{{Gmail.from}}','{{Gmail.date}}'] } }
+    }
+    const e: Edge[] = [{ id: 'ex-e1', source: 'ex-gmail', target: 'ex-sheets', style: { stroke: SERVICE_META.gmail.color }, markerEnd: { type: MarkerType.ArrowClosed } }]
+    pushHistory(set)
+    set(() => ({ nodes: [n1, n2], edges: e }))
+    // if spreadsheetId wasn't provided, open config for the sheets node so user can paste it
+    if (!spreadsheetId) set({ configOpenId: 'ex-sheets' })
+  },
+
   runTest: async () => {
-    const { nodes } = get()
+    const { nodes, edges } = get()
+    const outputs: Record<string, any> = {}
+
     for (const n of nodes) {
       set((s) => ({ nodes: s.nodes.map(x => x.id === n.id ? { ...x, data: { ...x.data, status: 'running', startedAt: Date.now() } } : x) }))
-      await new Promise(res => setTimeout(res, 300))
-      const durationMs = 200 + Math.round(Math.random() * 600)
-      const ok = Math.random() > 0.1
-      set((s) => ({ nodes: s.nodes.map(x => x.id === n.id ? { ...x, data: { ...x.data, status: ok ? 'success' : 'error', durationMs, error: ok ? undefined : 'Sample error' } } : x) }))
+
+      try {
+        if (n.data.service === 'gmail' && n.data.kind === 'trigger') {
+          const sinceMs = Number(n.data.config?.sinceMs ?? 0)
+          const url = `http://localhost:4000/api/emails/updates?sinceMs=${sinceMs}`
+          const resp = await fetch(url)
+          if (!resp.ok) throw new Error(`Gmail API error ${resp.status}`)
+          const json = await resp.json()
+          const messages = json.messages ?? []
+
+          // apply subject filter from node config (case-insensitive)
+          const subjFilter = String(n.data.config?.subject || '').trim().toLowerCase()
+          const matched = subjFilter ? messages.filter((m: any) => String(m.subject || '').toLowerCase().includes(subjFilter)) : messages
+
+          outputs[n.id] = matched
+
+          const durationMs = 100 + Math.round(Math.random() * 300)
+          set((s) => ({ nodes: s.nodes.map(x => x.id === n.id ? { ...x, data: { ...x.data, status: 'success', durationMs, configMatchCount: matched.length } } : x) }))
+          if (matched.length === 0) {
+            // no matching emails found — mark as success but downstream nodes should be skipped
+            // add a short delay to make UX visible
+            await new Promise(res => setTimeout(res, 200))
+            continue
+          }
+
+        } else if (n.data.service === 'sheets' && n.data.name && n.data.name.toLowerCase().includes('add row')) {
+          const incoming = edges.filter(e => e.target === n.id).map(e => e.source)
+          let values: any[] = []
+          if (incoming.length > 0) {
+            const srcOut = outputs[incoming[0]]
+            if (Array.isArray(srcOut) && srcOut.length > 0) {
+              const m = srcOut[srcOut.length - 1]
+              values = [m.subject || m.snippet || '', m.from || '', m.date || '']
+            }
+          }
+          if (values.length === 0) {
+            if (Array.isArray(n.data.config?.values) && n.data.config.values.length) values = n.data.config.values
+            else values = ['(no-data)']
+          }
+
+          const sheetIdRaw = n.data.config?.spreadsheetId || n.data.config?.spreadsheet || n.data.config?.spreadsheetName
+          const sheetName = n.data.config?.worksheet || n.data.config?.sheetName || 'Sheet1'
+
+          // Basic validation: Google spreadsheetId is long (usually > 20 chars) and contains no spaces.
+          if (!sheetIdRaw || typeof sheetIdRaw !== 'string' || sheetIdRaw.length < 20 || /\s/.test(sheetIdRaw)) {
+            const hint = `Invalid spreadsheet identifier "${sheetIdRaw}". Please use the spreadsheetId (the long id in the sheet URL) or update the backend to resolve by name.`
+            set((s) => ({ nodes: s.nodes.map(x => x.id === n.id ? { ...x, data: { ...x.data, status: 'error', error: hint } } : x) }))
+            continue
+          }
+
+          const body = {
+            spreadsheetId: sheetIdRaw,
+            sheetName,
+            rowNumber: n.data.config?.rowNumber || 2,
+            values,
+          }
+
+          const resp = await fetch('http://localhost:4000/api/sheets/update-row', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+          })
+          if (!resp.ok) {
+            const text = await resp.text()
+            throw new Error(`Sheets API error ${resp.status}: ${text}`)
+          }
+          const json = await resp.json()
+          outputs[n.id] = json
+          const durationMs = 120 + Math.round(Math.random() * 400)
+          set((s) => ({ nodes: s.nodes.map(x => x.id === n.id ? { ...x, data: { ...x.data, status: 'success', durationMs } } : x) }))
+
+        } else {
+          await new Promise(res => setTimeout(res, 200))
+          outputs[n.id] = { ok: true }
+          const durationMs = 80 + Math.round(Math.random() * 200)
+          set((s) => ({ nodes: s.nodes.map(x => x.id === n.id ? { ...x, data: { ...x.data, status: 'success', durationMs } } : x) }))
+        }
+      } catch (err: any) {
+        const message = String(err?.message ?? err)
+        set((s) => ({ nodes: s.nodes.map(x => x.id === n.id ? { ...x, data: { ...x.data, status: 'error', error: message } } : x) }))
+      }
     }
   },
 
