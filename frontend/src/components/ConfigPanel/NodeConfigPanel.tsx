@@ -15,29 +15,14 @@ const FIELDS: Record<string, { label: string; type: 'text' | 'textarea' | 'check
     { label: 'Spreadsheet', type: 'text', placeholder: 'Invoices' },
     { label: 'Worksheet', type: 'text', placeholder: 'Sheet1' },
   ],
-  'slack.sendMessage': [
-    { label: 'Channel', type: 'text', placeholder: '#general' },
-    { label: 'Message', type: 'textarea', placeholder: 'Text, supports variables {{...}}' },
-  ],
+  
   'gcal.createEvent': [
     { label: 'Calendar', type: 'text', placeholder: 'Primary' },
     { label: 'Title', type: 'text', placeholder: 'Event title' },
     { label: 'Start time', type: 'text', placeholder: '2025-10-01T10:00' },
     { label: 'End time', type: 'text', placeholder: '2025-10-01T11:00' },
   ],
-  'special.delay': [
-    { label: 'Duration (seconds)', type: 'text', placeholder: '60' },
-  ],
-  'special.condition': [
-    { label: 'Variable', type: 'text', placeholder: '{{Gmail.Subject}}' },
-    { label: 'Condition', type: 'select', options: ['equals', 'contains', 'greater than', 'less than'] },
-    { label: 'Value', type: 'text', placeholder: 'invoice' },
-  ],
-  'special.transform': [
-    { label: 'Input variable', type: 'text', placeholder: '{{Node.Var}}' },
-    { label: 'Transformation', type: 'select', options: ['uppercase', 'lowercase', 'trim'] },
-    { label: 'Output variable name', type: 'text', placeholder: 'Result' },
-  ],
+ 
 }
 
 function fieldsForNodeName(name: string): keyof typeof FIELDS | undefined {

@@ -43,21 +43,21 @@ export const NodePalette: React.FC<{ collapsed?: boolean }> = ({ collapsed }) =>
         <Item label="Find Row" icon={<Filter className="w-4 h-4" />} type="sheets.findRow" service="sheets" />
         <Item label="Clear Row" icon={<Trash className="w-4 h-4" />} type="sheets.clearRow" service="sheets" />
       </Section>
-      <Section title="Slack" color="#4A154B">
+      {/* <Section title="Slack" color="#4A154B">
         <Item label="New Message in Channel" icon={<Zap className="w-4 h-4" />} type="slack.newMessage" service="slack" />
         <Item label="New Direct Message" icon={<Zap className="w-4 h-4" />} type="slack.newDm" service="slack" />
         <Item label="Send Message" icon={<Send className="w-4 h-4" />} type="slack.sendMessage" service="slack" />
         <Item label="Send Direct Message" icon={<Send className="w-4 h-4" />} type="slack.sendDm" service="slack" />
         <Item label="Create Channel" icon={<Plus className="w-4 h-4" />} type="slack.createChannel" service="slack" />
         <Item label="Add Reaction" icon={<Smile className="w-4 h-4" />} type="slack.addReaction" service="slack" />
-      </Section>
-      <Section title="Telegram" color="#0088cc">
+      </Section> */}
+      {/* <Section title="Telegram" color="#0088cc">
         <Item label="New Message Received" icon={<Zap className="w-4 h-4" />} type="telegram.newMessage" service="telegram" />
         <Item label="Send Message" icon={<Send className="w-4 h-4" />} type="telegram.sendMessage" service="telegram" />
         <Item label="Send Photo" icon={<Image className="w-4 h-4" />} type="telegram.sendPhoto" service="telegram" />
         <Item label="Send Document" icon={<File className="w-4 h-4" />} type="telegram.sendDocument" service="telegram" />
         <Item label="Reply to Message" icon={<MessageSquare className="w-4 h-4" />} type="telegram.reply" service="telegram" />
-      </Section>
+      </Section> */}
       <Section title="Google Calendar" color="#4285F4">
         <Item label="New Event Created" icon={<Zap className="w-4 h-4" />} type="gcal.newEvent" service="gcal" />
         <Item label="Event Starting Soon" icon={<Clock className="w-4 h-4" />} type="gcal.eventSoon" service="gcal" />
@@ -66,11 +66,11 @@ export const NodePalette: React.FC<{ collapsed?: boolean }> = ({ collapsed }) =>
         <Item label="Delete Event" icon={<Trash className="w-4 h-4" />} type="gcal.deleteEvent" service="gcal" />
         <Item label="Find Event" icon={<Filter className="w-4 h-4" />} type="gcal.findEvent" service="gcal" />
       </Section>
-      <Section title="Special" color="#3B82F6">
+      {/* <Section title="Special" color="#3B82F6">
         <Item label="Delay" icon={<Clock className="w-4 h-4" />} type="special.delay" service="special" />
         <Item label="Condition / Filter" icon={<Filter className="w-4 h-4" />} type="special.condition" service="special" />
         <Item label="Data Transformer" icon={<Settings2 className="w-4 h-4" />} type="special.transform" service="special" />
-      </Section>
+      </Section> */}
     </div>
   )
 }
