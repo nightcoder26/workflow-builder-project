@@ -2,10 +2,16 @@ import React, { useState } from 'react'
 import { useWorkflowStore } from '@/store/workflow'
 import { Button } from '@/components/ui/button'
 import { Mail, FileSpreadsheet, Slack, Send, Calendar } from 'lucide-react'
+import { connectionsStatus, API_BASE } from '@/lib/api'
 
 export const ConnectionsPanel: React.FC<{ collapsed?: boolean }> = ({ collapsed }) => {
   const { connections, connectService, disconnectService, loadingService } = useWorkflowStore()
   const [open, setOpen] = useState(true)
+  const [backendConn, setBackendConn] = useState<Record<string, boolean> | null>(null)
+
+  React.useEffect(() => {
+    connectionsStatus().then((r) => setBackendConn(r.data)).catch(() => setBackendConn(null))
+  }, [])
 
   const Section: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
     <div className="border rounded-md shadow-card bg-white">
@@ -51,6 +57,7 @@ export const ConnectionsPanel: React.FC<{ collapsed?: boolean }> = ({ collapsed 
   if (collapsed) return null
 
   return (
+    <>
     <Section title="Connected Accounts" icon={<span className="w-2 h-2 bg-primary rounded-full inline-block" />}> 
       <Row name="Gmail" service="gmail" icon={<Mail className="w-4 h-4" />} color="#EA4335" />
       <Row name="Google Sheets" service="sheets" icon={<FileSpreadsheet className="w-4 h-4" />} color="#34A853" />
@@ -58,5 +65,36 @@ export const ConnectionsPanel: React.FC<{ collapsed?: boolean }> = ({ collapsed 
       <Row name="Telegram" service="telegram" icon={<Send className="w-4 h-4" />} color="#0088cc" extra={<a className="text-xs text-primary underline" href="#" onClick={(e)=>e.preventDefault()}>How to create a Telegram Bot</a>} />
       <Row name="Google Calendar" service="gcal" icon={<Calendar className="w-4 h-4" />} color="#4285F4" />
     </Section>
+    <div className="mt-4">
+      <Section title="Backend Connections" icon={<span className="w-2 h-2 bg-emerald-500 rounded-full inline-block" />}> 
+        {backendConn ? (
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span>Gmail</span>
+              <span className={`text-xs ${backendConn.gmail ? 'text-emerald-600' : 'text-slate-500'}`}>{backendConn.gmail ? 'connected' : 'not connected'}</span>
+              <button className="text-primary underline text-xs" onClick={() => connectService('gmail')}>Connect</button>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Google Sheets</span>
+              <span className={`text-xs ${backendConn.googleSheets ? 'text-emerald-600' : 'text-slate-500'}`}>{backendConn.googleSheets ? 'connected' : 'not connected'}</span>
+              <button className="text-primary underline text-xs" onClick={() => connectService('sheets')}>Connect</button>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Google Calendar</span>
+              <span className={`text-xs ${backendConn.googleCalendar ? 'text-emerald-600' : 'text-slate-500'}`}>{backendConn.googleCalendar ? 'connected' : 'not connected'}</span>
+              <button className="text-primary underline text-xs" onClick={() => connectService('gcal')}>Connect</button>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Slack</span>
+              <span className={`text-xs ${backendConn.slack ? 'text-emerald-600' : 'text-slate-500'}`}>{backendConn.slack ? 'connected' : 'not connected'}</span>
+              <button className="text-primary underline text-xs" onClick={() => connectService('slack')}>Connect</button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-xs text-slate-500">Not signed in or unable to fetch connections status.</div>
+        )}
+      </Section>
+    </div>
+    </>
   )
 }

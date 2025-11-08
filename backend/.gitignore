@@ -1,0 +1,84 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+
+# Environment
+.env
+.env.*.local
+.env.local
+!.env.example
+
+# Runtime data
+pids/
+*.pid
+*.pid.lock
+*.seed
+tmp/
+temp/
+logs/
+*.log
+
+# Build / output
+dist/
+build/
+lib/
+coverage/
+coverage-final.json
+.nyc_output/
+*.tsbuildinfo
+
+# Test
+jest-cache/
+test-results/
+
+# Editor/IDE
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Debug / profiling
+*.log.*
+*.stackdump
+
+# Database/files
+*.sqlite
+*.sqlite3
+*.db
+local-uploads/
+uploads/
+
+# Docker
+docker-compose.override.yml
+.env.docker
+
+# Keys / secrets / certs
+*.key
+*.pem
+*.crt
+secrets/
+
+# Package manager caches
+.cache/
+.pnpm-store/
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+.yarn-integrity
+
+# Misc
+.vagrant/
+.idea/
+.history/

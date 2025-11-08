@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { Edge, Node, applyEdgeChanges, applyNodeChanges, Connection, MarkerType } from 'reactflow'
 import { AppNodeData, Service } from '@/types/nodes'
 import { SERVICE_META } from '@/nodes/constants'
+import { API_BASE, createWorkflow as apiCreateWorkflow, updateWorkflow as apiUpdateWorkflow, getWorkflow as apiGetWorkflow, testWorkflow as apiTestWorkflow } from '@/lib/api'
 
 export type ConnectionState = {
   connected: boolean
@@ -32,6 +33,10 @@ type Store = {
   workflowName: string
   history: HistoryItem[]
   future: HistoryItem[]
+  workflowId?: string
+  setWorkflowId: (id?: string) => void
+  loadWorkflow: (id: string) => Promise<void>
+  newWorkflow: () => void
   startDragNode: (e: React.DragEvent, payload: DragPayload) => void
   onDrop: (evt: React.DragEvent, pos: { x: number; y: number }) => void
   onNodesChange: (changes: any) => void
@@ -45,8 +50,9 @@ type Store = {
   connectService: (service: Service) => Promise<void>
   disconnectService: (service: Service) => void
   setWorkflowName: (name: string) => void
-  saveWorkflow: () => void
+  saveWorkflow: () => Promise<void>
   runTest: () => Promise<void>
+  runTestBackend: () => Promise<void>
   loadExampleWorkflow: (spreadsheetId?: string) => void
   canSave: () => boolean
   undo: () => void
@@ -224,21 +230,109 @@ export const useWorkflowStore = create<Store>((set, get) => ({
   connectService: async (service) => {
     if (service === 'special') return
     set({ loadingService: service })
-    // Simulate popup OAuth and completion
-    await new Promise(res => setTimeout(res, 1200))
-    set((s) => ({ connections: { ...s.connections, [service]: { connected: true, label: `${service}@example.com` } }, loadingService: undefined }))
+    try {
+      if (service === 'telegram') {
+        // keep existing behaviour for telegram (requires token input)
+        await new Promise(res => setTimeout(res, 1200))
+        set((s) => ({ connections: { ...s.connections, [service]: { connected: true, label: `${service}@example.com` } }, loadingService: undefined }))
+        return
+      }
+      // For Google/Slack flows, open OAuth popup and poll backend for status
+  const { connectServiceWithPopup } = await import('@/lib/oauth')
+  // Map frontend service keys to backend expected service names
+  const backendService = service === 'gcal' ? 'calendar' : service
+  await connectServiceWithPopup(backendService as string)
+      // Refresh connection status from backend
+      const { connectionsStatus } = await import('@/lib/api')
+      const r = await connectionsStatus()
+      const backend = r.data || {}
+      // Map backend booleans into frontend connection labels
+      set((s) => ({
+        connections: {
+          ...s.connections,
+          gmail: { connected: !!backend.gmail, label: backend.gmail ? (s.connections.gmail.label || 'gmail') : undefined },
+          sheets: { connected: !!backend.googleSheets, label: backend.googleSheets ? (s.connections.sheets.label || 'sheets') : undefined },
+          gcal: { connected: !!backend.googleCalendar, label: backend.googleCalendar ? (s.connections.gcal.label || 'gcal') : undefined },
+          slack: { connected: !!backend.slack, label: backend.slack ? 'slack' : undefined },
+        },
+        loadingService: undefined,
+      }))
+    } catch (err: any) {
+      console.error('connectService failed', err)
+      set({ loadingService: undefined })
+      throw err
+    }
   },
 
   disconnectService: (service) => set((s) => ({ connections: { ...s.connections, [service]: { connected: false } } })),
 
   setWorkflowName: (name) => set({ workflowName: name }),
 
-  saveWorkflow: () => {
-    const { nodes, edges, workflowName } = get()
-    const payload = { savedAt: Date.now(), nodes, edges, workflowName }
-    const key = 'workflow:last'
-    localStorage.setItem(key, JSON.stringify(payload))
-    pushHistory(set)
+  setWorkflowId: (id?: string) => set({ workflowId: id }),
+
+  loadWorkflow: async (id: string) => {
+    try {
+      const res = await apiGetWorkflow(id)
+      const w = (res as any)?.workflow || (res as any)?.data || null
+      if (!w) throw new Error('Workflow not found')
+      // normalize nodes/edges
+      const nodes = w.nodes || []
+      const edges = w.edges || []
+      set(() => ({ nodes, edges, workflowName: w.name || 'Untitled Workflow', workflowId: w._id || w.id }))
+      // clear history when loading a server workflow
+      set({ history: [], future: [] })
+    } catch (err) {
+      console.error('loadWorkflow failed', err)
+      throw err
+    }
+  },
+
+  newWorkflow: () => {
+    // reset to sample template and clear server id
+    set(() => ({ nodes: sampleNodes, edges: sampleEdges, workflowName: 'Untitled workflow', workflowId: undefined, history: [], future: [] }))
+  },
+
+  saveWorkflow: async () => {
+    const { nodes, edges, workflowName, workflowId } = get()
+    const payload = { name: workflowName || 'Untitled Workflow', description: '', nodes, edges }
+
+    // keep a local copy for fast recovery
+    try {
+      const key = 'workflow:last'
+      localStorage.setItem(key, JSON.stringify({ savedAt: Date.now(), nodes, edges, workflowName }))
+
+      if (workflowId) {
+        // update existing workflow
+        const updated = await apiUpdateWorkflow(workflowId, payload)
+        pushHistory(set)
+        alert('Workflow updated on server.')
+        return
+      }
+
+      // create new workflow on server
+      const created = await apiCreateWorkflow(payload)
+      const id = (created as any)?.data?._id || (created as any)?.data?.id
+      if (id) {
+        set({ workflowId: id })
+        // update the URL so the editor reflects the saved workflow id
+        try { window.history.replaceState({}, document.title, `/workflow/${id}`) } catch (e) {}
+        pushHistory(set)
+        alert('Workflow created on server.')
+      } else {
+        pushHistory(set)
+        alert('Workflow saved locally, but server returned no id.')
+      }
+    } catch (err: any) {
+      console.error('saveWorkflow failed', err)
+      // keep local copy even if backend save fails
+      pushHistory(set)
+      const msg = err?.message || String(err)
+      if (/unauthorized|401/i.test(msg)) {
+        alert('Please log in to save workflows to the server. Local copy saved.')
+      } else {
+        alert(`Failed to save to server: ${msg}. Local copy saved.`)
+      }
+    }
   },
 
   loadExampleWorkflow: (spreadsheetId?: string) => {
@@ -271,8 +365,9 @@ export const useWorkflowStore = create<Store>((set, get) => ({
       try {
         if (n.data.service === 'gmail' && n.data.kind === 'trigger') {
           const sinceMs = Number(n.data.config?.sinceMs ?? 0)
-          const url = `http://localhost:4000/api/emails/updates?sinceMs=${sinceMs}`
-          const resp = await fetch(url)
+          const url = `${API_BASE}/api/emails/updates?sinceMs=${sinceMs}`
+          const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+          const resp = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : undefined })
           if (!resp.ok) throw new Error(`Gmail API error ${resp.status}`)
           const json = await resp.json()
           const messages = json.messages ?? []
@@ -299,7 +394,7 @@ export const useWorkflowStore = create<Store>((set, get) => ({
             const srcOut = outputs[incoming[0]]
             if (Array.isArray(srcOut) && srcOut.length > 0) {
               const m = srcOut[srcOut.length - 1]
-              values = [m.subject || m.snippet || '', m.from || '', m.date || '']
+              values = [m.subject || '', m.body || m.snippet || '']
             }
           }
           if (values.length === 0) {
@@ -324,8 +419,9 @@ export const useWorkflowStore = create<Store>((set, get) => ({
             values,
           }
 
-          const resp = await fetch('http://localhost:4000/api/sheets/update-row', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+          const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+          const resp = await fetch(`${API_BASE}/api/sheets/update-row`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body)
           })
           if (!resp.ok) {
             const text = await resp.text()
@@ -345,6 +441,26 @@ export const useWorkflowStore = create<Store>((set, get) => ({
       } catch (err: any) {
         const message = String(err?.message ?? err)
         set((s) => ({ nodes: s.nodes.map(x => x.id === n.id ? { ...x, data: { ...x.data, status: 'error', error: message } } : x) }))
+      }
+    }
+  },
+
+  runTestBackend: async () => {
+    const { nodes, edges, workflowName } = get()
+    const payload = { name: workflowName || 'Untitled Workflow', description: '', nodes, edges }
+    try {
+      const created = await apiCreateWorkflow(payload)
+      const id = (created as any)?.data?._id || (created as any)?.data?.id
+      if (!id) throw new Error('Failed to create workflow')
+      const result = await apiTestWorkflow(String(id))
+      console.log('Backend test result:', result)
+      alert('Workflow executed on backend. Open Executions to view details.')
+    } catch (err: any) {
+      const msg = err?.message || String(err)
+      if (/unauthorized|401/i.test(msg)) {
+        alert('Please log in before testing the workflow.')
+      } else {
+        alert(`Backend test failed: ${msg}`)
       }
     }
   },
