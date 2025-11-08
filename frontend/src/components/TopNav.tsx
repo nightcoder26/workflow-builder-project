@@ -6,7 +6,7 @@ import { ProfileMenu } from '@/components/topbar/ProfileMenu'
 import { WorkflowHistoryDropdown } from '@/components/topbar/WorkflowHistoryDropdown'
 import { API_BASE } from '@/lib/api'
 import { useAuthStore } from '@/store/auth'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 export const TopNav: React.FC = () => {
   const { workflowName, setWorkflowName, saveWorkflow, runTest, runTestBackend, canSave, loadExampleWorkflow } = useWorkflowStore()
@@ -27,6 +27,21 @@ export const TopNav: React.FC = () => {
   }
   const { authenticated, user, logout } = useAuthStore()
   const navigate = useNavigate()
+  const location = useLocation()
+  const [loggingOut, setLoggingOut] = React.useState(false)
+
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    try {
+      await logout()
+    } catch (e) {
+      // ignore
+    } finally {
+      const returnTo = encodeURIComponent(location.pathname + (location.search || ''))
+      setLoggingOut(false)
+      navigate(`/login?returnTo=${returnTo}`)
+    }
+  }
 
   return (
     <header className="h-16 px-4 border-b border-slate-200 bg-white shadow-card flex items-center justify-between">
@@ -56,7 +71,10 @@ export const TopNav: React.FC = () => {
         ) : (
           <>
             <span className="text-sm text-slate-600">{user?.name || user?.email}</span>
-            <Button variant="ghost" onClick={async ()=>{ await logout(); navigate('/login') }}>Logout</Button>
+            <Button variant="ghost" onClick={handleLogout} disabled={loggingOut}>
+              {loggingOut && <span className="w-4 h-4 border-2 border-t-transparent border-current rounded-full animate-spin mr-2 inline-block" />}
+              Logout
+            </Button>
           </>
         )}
         <Button variant="ghost" onClick={() => {
