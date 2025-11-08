@@ -32,7 +32,10 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { secure: false, httpOnly: true, sameSite: 'lax' },
-    store: MongoStore.create({ mongoUrl: process.env.MONGO_URI || 'mongodb://localhost:27017/workflowsessions' })
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI
+    })
+
 }))
 
 app.use(express.json());

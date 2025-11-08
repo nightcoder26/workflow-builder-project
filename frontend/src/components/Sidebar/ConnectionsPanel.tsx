@@ -61,15 +61,15 @@ export const ConnectionsPanel: React.FC<{ collapsed?: boolean }> = ({ collapsed 
     <Section title="Connected Accounts" icon={<span className="w-2 h-2 bg-primary rounded-full inline-block" />}> 
       <Row name="Gmail" service="gmail" icon={<Mail className="w-4 h-4" />} color="#EA4335" />
       <Row name="Google Sheets" service="sheets" icon={<FileSpreadsheet className="w-4 h-4" />} color="#34A853" />
-      <Row name="Slack" service="slack" icon={<Slack className="w-4 h-4" />} color="#4A154B" />
-      <Row name="Telegram" service="telegram" icon={<Send className="w-4 h-4" />} color="#0088cc" extra={<a className="text-xs text-primary underline" href="#" onClick={(e)=>e.preventDefault()}>How to create a Telegram Bot</a>} />
+      {/* <Row name="Slack" service="slack" icon={<Slack className="w-4 h-4" />} color="#4A154B" />
+      <Row name="Telegram" service="telegram" icon={<Send className="w-4 h-4" />} color="#0088cc" extra={<a className="text-xs text-primary underline" href="#" onClick={(e)=>e.preventDefault()}>How to create a Telegram Bot</a>} /> */}
       <Row name="Google Calendar" service="gcal" icon={<Calendar className="w-4 h-4" />} color="#4285F4" />
     </Section>
     <div className="mt-4">
       <Section title="Backend Connections" icon={<span className="w-2 h-2 bg-emerald-500 rounded-full inline-block" />}> 
         {backendConn ? (
           <div className="space-y-2 text-sm">
-            <div className="flex items-center justify-between">
+            {/* <div className="flex items-center justify-between">
               <span>Gmail</span>
               <span className={`text-xs ${backendConn.gmail ? 'text-emerald-600' : 'text-slate-500'}`}>{backendConn.gmail ? 'connected' : 'not connected'}</span>
               <button className="text-primary underline text-xs" onClick={() => connectService('gmail')}>Connect</button>
@@ -88,7 +88,7 @@ export const ConnectionsPanel: React.FC<{ collapsed?: boolean }> = ({ collapsed 
               <span>Slack</span>
               <span className={`text-xs ${backendConn.slack ? 'text-emerald-600' : 'text-slate-500'}`}>{backendConn.slack ? 'connected' : 'not connected'}</span>
               <button className="text-primary underline text-xs" onClick={() => connectService('slack')}>Connect</button>
-            </div>
+            </div> */}
           </div>
         ) : (
           <div className="text-xs text-slate-500">Not signed in or unable to fetch connections status.</div>
