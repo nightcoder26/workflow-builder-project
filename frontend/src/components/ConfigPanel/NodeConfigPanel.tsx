@@ -9,29 +9,115 @@ const FIELDS: Record<string, { label: string; type: 'text' | 'textarea' | 'check
     { label: 'Subject contains', type: 'text', placeholder: 'Invoice', help: 'Filter emails by subject substring' },
     { label: 'Sender email', type: 'text', placeholder: 'name@example.com' },
     { label: 'Has attachment', type: 'checkbox' },
-    { label: 'Polling interval', type: 'select', options: ['1', '5', '15', '30'] },
+    // { label: 'Polling interval', type: 'select', options: ['1', '5', '15', '30'] },
+  ],
+  'gmail.sendEmail': [
+    { label: 'To', type: 'text', placeholder: 'recipient@example.com' },
+    { label: 'Cc', type: 'text', placeholder: 'cc@example.com' },
+    { label: 'Bcc', type: 'text', placeholder: 'bcc@example.com' },
+    { label: 'Subject', type: 'text', placeholder: 'Subject line' },
+    { label: 'Body', type: 'textarea', placeholder: 'Message body (supports variables {{...}})' },
+  ],
+  'gmail.createDraft': [
+    { label: 'To', type: 'text', placeholder: 'recipient@example.com' },
+    { label: 'Subject', type: 'text', placeholder: 'Subject line' },
+    { label: 'Body', type: 'textarea', placeholder: 'Draft content (supports variables {{...}})' },
   ],
   'sheets.addRow': [
     { label: 'Spreadsheet', type: 'text', placeholder: 'Invoices' },
     { label: 'Worksheet', type: 'text', placeholder: 'Sheet1' },
   ],
-  
+  'sheets.newRow': [
+    { label: 'Spreadsheet', type: 'text', placeholder: 'Invoices' },
+    { label: 'Worksheet', type: 'text', placeholder: 'Sheet1' },
+    // { label: 'Polling interval (sec)', type: 'select', options: ['15','30','60','300'] },
+  ],
+  'sheets.rowUpdated': [
+    { label: 'Spreadsheet', type: 'text', placeholder: 'Invoices' },
+    { label: 'Worksheet', type: 'text', placeholder: 'Sheet1' },
+    { label: 'Watch columns (comma)', type: 'text', placeholder: 'A,B,C' },
+  ],
+  'sheets.updateRow': [
+    { label: 'Spreadsheet', type: 'text', placeholder: 'Invoices' },
+    { label: 'Worksheet', type: 'text', placeholder: 'Sheet1' },
+    { label: 'Row number', type: 'text', placeholder: '2' },
+    { label: 'Values (JSON or CSV)', type: 'textarea', placeholder: '{"A":"123","B":"456"}' },
+  ],
+  'sheets.clearRow': [
+    { label: 'Spreadsheet', type: 'text', placeholder: 'Invoices' },
+    { label: 'Worksheet', type: 'text', placeholder: 'Sheet1' },
+    { label: 'Row number', type: 'text', placeholder: '2' },
+  ],
+  'slack.sendMessage': [
+    { label: 'Channel', type: 'text', placeholder: '#general' },
+    { label: 'Message', type: 'textarea', placeholder: 'Text, supports variables {{...}}' },
+  ],
   'gcal.createEvent': [
     { label: 'Calendar', type: 'text', placeholder: 'Primary' },
     { label: 'Title', type: 'text', placeholder: 'Event title' },
     { label: 'Start time', type: 'text', placeholder: '2025-10-01T10:00' },
     { label: 'End time', type: 'text', placeholder: '2025-10-01T11:00' },
   ],
- 
+  'gcal.newEvent': [
+    { label: 'Calendar', type: 'text', placeholder: 'Primary' },
+    { label: 'Title contains', type: 'text', placeholder: 'Keyword (optional)' },
+  ],
+  'gcal.deleteEvent': [
+    { label: 'Calendar', type: 'text', placeholder: 'Primary' },
+    { label: 'Event ID', type: 'text', placeholder: 'evt_123...' },
+  ],
+  'gcal.eventSoon': [
+    { label: 'Calendar', type: 'text', placeholder: 'Primary' },
+    { label: 'Lead time (minutes)', type: 'select', options: ['5', '10', '15', '30', '60'] },
+  ],
+  'gcal.updateEvent': [
+    { label: 'Calendar', type: 'text', placeholder: 'Primary' },
+    { label: 'Event ID', type: 'text', placeholder: 'evt_123...' },
+    { label: 'Title', type: 'text', placeholder: 'Updated title' },
+    { label: 'Start time', type: 'text', placeholder: '2025-10-01T10:00' },
+    { label: 'End time', type: 'text', placeholder: '2025-10-01T11:00' },
+    { label: 'Location', type: 'text', placeholder: 'Room 101 (optional)' },
+  ],
+  'gcal.findEvent': [
+    { label: 'Calendar', type: 'text', placeholder: 'Primary' },
+    { label: 'Query', type: 'text', placeholder: 'Title or keyword' },
+    { label: 'Start after', type: 'text', placeholder: '2025-10-01T00:00 (optional)' },
+    { label: 'End before', type: 'text', placeholder: '2025-10-31T23:59 (optional)' },
+  ],
+  'special.delay': [
+    { label: 'Duration (seconds)', type: 'text', placeholder: '60' },
+  ],
+  'special.condition': [
+    { label: 'Variable', type: 'text', placeholder: '{{Gmail.Subject}}' },
+    { label: 'Condition', type: 'select', options: ['equals', 'contains', 'greater than', 'less than'] },
+    { label: 'Value', type: 'text', placeholder: 'invoice' },
+  ],
+  'special.transform': [
+    { label: 'Input variable', type: 'text', placeholder: '{{Node.Var}}' },
+    { label: 'Transformation', type: 'select', options: ['uppercase', 'lowercase', 'trim'] },
+    { label: 'Output variable name', type: 'text', placeholder: 'Result' },
+  ],
 }
 
 function fieldsForNodeName(name: string): keyof typeof FIELDS | undefined {
-  const entry = Object.entries(FIELDS).find(([_, __]) => false)
-  // simple mapping by known names
-  if (name.includes('New Email')) return 'gmail.newEmail'
-  if (name.includes('Add Row')) return 'sheets.addRow'
-  if (name.includes('Send Message') && name.includes('Channel')) return 'slack.sendMessage'
-  if (name.includes('Create Event')) return 'gcal.createEvent'
+  // simple mapping by known labels
+  if (name === 'New Email Received') return 'gmail.newEmail'
+  if (name === 'Send Email') return 'gmail.sendEmail'
+  if (name === 'Create Draft') return 'gmail.createDraft'
+
+  if (name === 'Add Row') return 'sheets.addRow'
+  if (name === 'New Row Added') return 'sheets.newRow'
+  if (name === 'Row Updated') return 'sheets.rowUpdated'
+  if (name === 'Update Row') return 'sheets.updateRow'
+  if (name === 'Clear Row') return 'sheets.clearRow'
+
+  if (name === 'Create Event') return 'gcal.createEvent'
+  if (name === 'New Event Created') return 'gcal.newEvent'
+  if (name.includes('Event Starting')) return 'gcal.eventSoon'
+  if (name === 'Update Event') return 'gcal.updateEvent'
+  if (name === 'Delete Event') return 'gcal.deleteEvent'
+  if (name === 'Find Event') return 'gcal.findEvent'
+
   if (name.includes('Delay')) return 'special.delay'
   if (name.includes('Condition')) return 'special.condition'
   if (name.includes('Transformer')) return 'special.transform'

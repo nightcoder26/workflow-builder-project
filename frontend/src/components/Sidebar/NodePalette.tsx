@@ -30,10 +30,8 @@ export const NodePalette: React.FC<{ collapsed?: boolean }> = ({ collapsed }) =>
     <div className="space-y-3">
       <Section title="Gmail" color="#EA4335">
         <Item label="New Email Received" icon={<Zap className="w-4 h-4" />} type="gmail.newEmail" service="gmail" />
-        <Item label="Specific Label Email" icon={<Tag className="w-4 h-4" />} type="gmail.labelEmail" service="gmail" />
         <Item label="Send Email" icon={<Send className="w-4 h-4" />} type="gmail.sendEmail" service="gmail" />
         <Item label="Create Draft" icon={<Plus className="w-4 h-4" />} type="gmail.createDraft" service="gmail" />
-        <Item label="Reply to Email" icon={<MessageSquare className="w-4 h-4" />} type="gmail.reply" service="gmail" />
       </Section>
       <Section title="Google Sheets" color="#34A853">
         <Item label="New Row Added" icon={<Plus className="w-4 h-4" />} type="sheets.newRow" service="sheets" />

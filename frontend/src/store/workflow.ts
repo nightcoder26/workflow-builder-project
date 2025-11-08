@@ -76,36 +76,22 @@ function parseNodeLabel(type: string): { name: string; kind: 'trigger'|'action'|
 function labelFromType(type: string) {
   const map: Record<string, string> = {
     'gmail.newEmail': 'New Email Received',
-    'gmail.labelEmail': 'Specific Label Email',
     'gmail.sendEmail': 'Send Email',
     'gmail.createDraft': 'Create Draft',
-    'gmail.reply': 'Reply to Email',
     'sheets.newRow': 'New Row Added',
     'sheets.rowUpdated': 'Row Updated',
     'sheets.addRow': 'Add Row',
     'sheets.updateRow': 'Update Row',
     'sheets.findRow': 'Find Row',
     'sheets.clearRow': 'Clear Row',
-    'slack.newMessage': 'New Message in Channel',
-    'slack.newDm': 'New Direct Message',
-    'slack.sendMessage': 'Send Message to Channel',
-    'slack.sendDm': 'Send Direct Message',
-    'slack.createChannel': 'Create Channel',
-    'slack.addReaction': 'Add Reaction to Message',
-    'telegram.newMessage': 'New Message Received',
-    'telegram.sendMessage': 'Send Message',
-    'telegram.sendPhoto': 'Send Photo',
-    'telegram.sendDocument': 'Send Document',
-    'telegram.reply': 'Reply to Message',
+    
     'gcal.newEvent': 'New Event Created',
     'gcal.eventSoon': 'Event Starting Soon',
     'gcal.createEvent': 'Create Event',
     'gcal.updateEvent': 'Update Event',
     'gcal.deleteEvent': 'Delete Event',
     'gcal.findEvent': 'Find Event',
-    'special.delay': 'Delay',
-    'special.condition': 'Condition / Filter',
-    'special.transform': 'Data Transformer',
+    
   }
   return map[type] ?? type
 }

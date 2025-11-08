@@ -27,7 +27,6 @@ const WorkflowSchema = new mongoose.Schema({
     isActive: { type: Boolean, default: false },
     isDraft: { type: Boolean, default: true },
     triggerType: { type: String, enum: ['polling', 'webhook', 'manual'], default: 'polling' },
-    pollingInterval: { type: Number, default: 5, min: 1, max: 60 },
     totalExecutions: { type: Number, default: 0 },
     lastExecutedAt: { type: Date },
     createdAt: { type: Date, default: Date.now },
