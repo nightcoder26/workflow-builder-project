@@ -11,8 +11,8 @@ export type AppNodeData = {
   kind: NodeKind
   name: string
   configured: boolean
-  status?: 'idle' | 'running' | 'success' | 'error'
-  error?: string
+  status?: 'idle' | 'running' | 'success' ,
+  
   startedAt?: number
   durationMs?: number
   config: NodeConfig

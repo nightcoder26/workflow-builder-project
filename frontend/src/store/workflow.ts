@@ -394,7 +394,7 @@ export const useWorkflowStore = create<Store>((set, get) => ({
           // Basic validation: Google spreadsheetId is long (usually > 20 chars) and contains no spaces.
           if (!sheetIdRaw || typeof sheetIdRaw !== 'string' || sheetIdRaw.length < 20 || /\s/.test(sheetIdRaw)) {
             const hint = `Invalid spreadsheet identifier "${sheetIdRaw}". Please use the spreadsheetId (the long id in the sheet URL) or update the backend to resolve by name.`
-            set((s) => ({ nodes: s.nodes.map(x => x.id === n.id ? { ...x, data: { ...x.data, status: 'error', error: hint } } : x) }))
+            // set((s) => ({ nodes: s.nodes.map(x => x.id === n.id ? { ...x, data: { ...x.data, status: 'error', error: hint } } : x) }))
             continue
           }
 
@@ -426,7 +426,7 @@ export const useWorkflowStore = create<Store>((set, get) => ({
         }
       } catch (err: any) {
         const message = String(err?.message ?? err)
-        set((s) => ({ nodes: s.nodes.map(x => x.id === n.id ? { ...x, data: { ...x.data, status: 'error', error: message } } : x) }))
+        // set((s) => ({ nodes: s.nodes.map(x => x.id === n.id ? { ...x, data: { ...x.data, status: 'error', error: message } } : x) }))
       }
     }
   },

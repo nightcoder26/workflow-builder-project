@@ -8,10 +8,36 @@ export const ConnectionsPanel: React.FC<{ collapsed?: boolean }> = ({ collapsed 
   const { connections, connectService, disconnectService, loadingService } = useWorkflowStore()
   const [open, setOpen] = useState(true)
   const [backendConn, setBackendConn] = useState<Record<string, boolean> | null>(null)
+  const [localConnections, setLocalConnections] = useState<Record<string, boolean>>(() => {
+    const map: Record<string, boolean> = {}
+    try {
+      Object.keys(connections).forEach((k) => {
+        // @ts-ignore - connections keys are dynamic
+        map[k] = connections[k].connected
+      })
+    } catch (e) {
+      // fallback: empty
+    }
+    return map
+  })
 
   React.useEffect(() => {
     connectionsStatus().then((r) => setBackendConn(r.data)).catch(() => setBackendConn(null))
   }, [])
+
+  // Keep localConnections in sync if the store connections change
+  React.useEffect(() => {
+    const map: Record<string, boolean> = {}
+    try {
+      Object.keys(connections).forEach((k) => {
+        // @ts-ignore
+        map[k] = connections[k].connected
+      })
+      setLocalConnections(map)
+    } catch (e) {
+      // ignore
+    }
+  }, [connections])
 
   const Section: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
     <div className="border rounded-md shadow-card bg-white">
@@ -25,28 +51,29 @@ export const ConnectionsPanel: React.FC<{ collapsed?: boolean }> = ({ collapsed 
 
   const Row: React.FC<{ name: string; service: keyof typeof connections; icon: React.ReactNode; color: string; extra?: React.ReactNode }> = ({ name, service, icon, color, extra }) => {
     const c = connections[service]
+    const isConnected = (localConnections && localConnections[service as string]) ?? c.connected
     return (
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div className={`w-7 h-7 rounded-md flex items-center justify-center`} style={{ background: color, color: 'white' }}>{icon}</div>
           <div>
             <div className="text-sm font-medium">{name}</div>
-            <div className="text-xs text-slate-500 h-4">{c.connected ? c.label : 'Not connected'}</div>
+            <div className="text-xs text-slate-500 h-4">{isConnected ? (c.label || 'Connected') : 'Not connected'}</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${c.connected ? 'bg-success' : 'bg-slate-300'}`} />
-          {!c.connected ? (
+          <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success' : 'bg-slate-300'}`} />
+          {!isConnected ? (
             service === 'telegram' ? (
               <div className="flex items-center gap-2">
                 <input className="border rounded px-2 py-1 text-sm" placeholder="Bot Token" />
-                <Button disabled={!!loadingService} onClick={() => connectService(service)}>{loadingService === service ? 'Connecting...' : 'Connect'}</Button>
+                <Button disabled={!!loadingService} onClick={() => setLocalConnections(prev => ({ ...prev, [service]: true }))}>{loadingService === service ? 'Connecting...' : 'Connect'}</Button>
               </div>
             ) : (
-              <Button disabled={!!loadingService} onClick={() => connectService(service)}>{loadingService === service ? 'Connecting...' : 'Connect'}</Button>
+              <Button disabled={!!loadingService} onClick={() => setLocalConnections(prev => ({ ...prev, [service]: true }))}>{loadingService === service ? 'Connecting...' : 'Connect'}</Button>
             )
           ) : (
-            <Button variant="secondary" onClick={() => disconnectService(service)}>Disconnect</Button>
+            <Button variant="secondary" onClick={() => setLocalConnections(prev => ({ ...prev, [service]: false }))}>Disconnect</Button>
           )}
         </div>
         {extra}

@@ -27,8 +27,7 @@ const UserSchema = new mongoose.Schema({
         gmail: { type: ConnectedAccountSchema, default: {} },
         googleSheets: { type: ConnectedAccountSchema, default: {} },
         googleCalendar: { type: ConnectedAccountSchema, default: {} },
-        slack: { type: ConnectedAccountSchema, default: {} },
-        telegram: { type: ConnectedAccountSchema, default: {} }
+
     },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

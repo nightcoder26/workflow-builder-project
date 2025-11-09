@@ -15,3 +15,4 @@ router.patch('/:id/deactivate', controller.deactivate);
 router.post('/:id/duplicate', controller.duplicate);
 
 module.exports = router;
+
